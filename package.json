@@ -1,0 +1,72 @@
+{
+  "name": "complexity-loader",
+  "version": "0.0.0",
+  "description": "A webpack loader for performing complexity analysis on javascript using typhonjs-escomplex",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "webpack",
+    "test": "mocha-webpack --webpack-config config/webpack.config.test.js",
+    "dev": "mocha-webpack --webpack-config config/webpack.config.test.js --watch",
+    "coverage-test": "mocha-webpack --webpack-config config/webpack.config.coverage.js",
+    "coverage": "nyc npm run coverage-test",
+    "dev:coverage": "nodemon --watch test --watch src --exec \"npm run coverage\" --ext js,json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jon-hall/complexity-loader.git"
+  },
+  "keywords": [
+    "complexity",
+    "escomplex",
+    "webpack",
+    "loader",
+    "webpack-loader"
+  ],
+  "author": "Jon Hall <jon_hall@outlook.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jon-hall/complexity-loader/issues"
+  },
+  "homepage": "https://github.com/jon-hall/complexity-loader#readme",
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-eslint": "^7.1.0",
+    "babel-loader": "^6.2.7",
+    "babel-plugin-istanbul": "^2.0.3",
+    "babel-preset-es2015-node4": "^2.1.0",
+    "babel-preset-stage-0": "^6.16.0",
+    "babel-register": "^6.18.0",
+    "chai": "^3.5.0",
+    "eslint": "^3.9.1",
+    "eslint-config-standard": "^6.2.1",
+    "eslint-loader": "^1.6.1",
+    "eslint-plugin-promise": "^3.3.0",
+    "eslint-plugin-standard": "^2.0.1",
+    "lodash.mergewith": "^4.6.0",
+    "memory-fs": "^0.3.0",
+    "mocha": "^3.1.2",
+    "mocha-webpack": "^0.7.0",
+    "nyc": "^8.4.0",
+    "webpack": "^1.13.3",
+    "webpack-node-externals": "^1.5.4"
+  },
+  "dependencies": {
+    "source-map-support": "^0.4.6",
+    "typhonjs-escomplex": "0.0.12"
+  },
+  "nyc": {
+    "reporter": [
+      "lcov",
+      "text-summary"
+    ],
+    "exclude": [
+      ".tmp",
+      "test"
+    ],
+    "require": [
+      "babel-register"
+    ],
+    "sourceMap": false,
+    "instrument": false
+  }
+}
