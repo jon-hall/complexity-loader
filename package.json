@@ -4,12 +4,14 @@
   "description": "A webpack loader for performing complexity analysis on javascript using typhonjs-escomplex",
   "main": "lib/index.js",
   "scripts": {
-    "build": "webpack",
-    "test": "mocha-webpack --webpack-config config/webpack.config.test.js",
-    "dev": "mocha-webpack --webpack-config config/webpack.config.test.js --watch",
-    "coverage-test": "mocha-webpack --webpack-config config/webpack.config.coverage.js",
-    "coverage": "nyc npm run coverage-test",
-    "dev:coverage": "nodemon --watch test --watch src --exec \"npm run coverage\" --ext js,json"
+    "build": "babel src -d lib",
+    "dev": "nodemon --watch test --watch src --exec \"npm run lint-and-coverage\" --ext js,json -- test/",
+    "preversion": "npm run lint-and-test && npm run build",
+    "test": "mocha --compilers js:babel-register test/**/*.spec.js",
+    "lint": "eslint src/**/*.js test/**/*.js",
+    "lint-and-test": "npm run lint && npm run test",
+    "coverage": "istanbul cover node_modules/mocha/bin/_mocha --report html -- --compilers js:babel-core/register --colors test/",
+    "lint-and-coverage": "npm run lint && npm run coverage"
   },
   "repository": {
     "type": "git",
@@ -31,27 +33,23 @@
   "devDependencies": {
     "babel-cli": "^6.18.0",
     "babel-eslint": "^7.1.0",
-    "babel-loader": "^6.2.7",
-    "babel-plugin-istanbul": "^2.0.3",
+    "babel-plugin-add-module-exports": "github:jon-hall/babel-plugin-add-module-exports",
     "babel-preset-es2015-node4": "^2.1.0",
     "babel-preset-stage-0": "^6.16.0",
     "babel-register": "^6.18.0",
     "chai": "^3.5.0",
     "eslint": "^3.9.1",
     "eslint-config-standard": "^6.2.1",
-    "eslint-loader": "^1.6.1",
     "eslint-plugin-promise": "^3.3.0",
     "eslint-plugin-standard": "^2.0.1",
+    "istanbul": "^1.1.0-alpha.1",
     "lodash.mergewith": "^4.6.0",
     "memory-fs": "^0.3.0",
     "mocha": "^3.1.2",
-    "mocha-webpack": "^0.7.0",
-    "nyc": "^8.4.0",
-    "webpack": "^1.13.3",
-    "webpack-node-externals": "^1.5.4"
+    "nodemon": "^1.11.0",
+    "webpack": "^1.13.3"
   },
   "dependencies": {
-    "source-map-support": "^0.4.6",
     "typhonjs-escomplex": "0.0.12"
   },
   "nyc": {

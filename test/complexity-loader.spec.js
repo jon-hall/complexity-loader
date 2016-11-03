@@ -2,15 +2,15 @@ import path from 'path'
 
 import { expect } from 'chai'
 
-import webpack from 'webpack'
 import MemoryFileSystem from 'memory-fs'
 import mergeWith from 'lodash.mergewith'
+import webpack from 'webpack'
 
-// Because mocha-webpack is building us into a temp dir, we need to recalculate back to the test dir
-const TEST_BASE = path.join(__dirname, '../../../test')
+const TEST_BASE = __dirname
 const LOADER_PATH = path.join(__dirname, '../src/index.js')
 const OUTPUT_FILE_SYSTEM = new MemoryFileSystem()
 const CONFIG_BASIC = {
+  context: path.join(TEST_BASE, 'examples'),
   output: {
     path: path.resolve(TEST_BASE, 'output'),
     filename: 'output.js'
@@ -19,18 +19,12 @@ const CONFIG_BASIC = {
     loaders: [
       { test: /\.js$/, loader: LOADER_PATH }
     ]
-  },
-  // Webpack keeps trying to load the entry for our main webpack config as our entry point...
-  // Why? This *should* be a brand new, clean, compiler that has no connection to our main config...
-  resolve: {
-    root: path.join(TEST_BASE, 'examples')
-  },
-  cache: false
+  }
 }
 
 async function compile (entry, config = CONFIG_BASIC) {
-  const mergedConfig = mergeWith(config, { entry }, () => {}),
-    compiler = webpack(mergedConfig)
+  const mergedConfig = mergeWith(config, { entry }, () => {})
+  const compiler = webpack(mergedConfig)
 
   compiler.outputFileSystem = OUTPUT_FILE_SYSTEM
 
@@ -47,7 +41,7 @@ async function compile (entry, config = CONFIG_BASIC) {
 
 describe('complexity-loader', function () {
   it('should still allow a basic file to compile', async function () {
-    const stats = await compile('basic.js')
+    const stats = await compile(['./basic.js'])
     expect(stats).to.exist
     expect(stats.compilation.errors.length).to.equal(0)
     expect(stats.compilation.warnings.length).to.equal(0)
