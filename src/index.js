@@ -1,22 +1,7 @@
-import loaderUtils from 'loader-utils'
-import merge from 'lodash.merge'
 import escomplex from 'typhonjs-escomplex'
 
-const defaultOptions = {
-  // Can be a single value, or an array of values - currently the 'console' reporter is yet to be
-  // written, and we only support supplying a function (a "memory reporter") - eventually html etc.
-  // will be valid values (with further config as needed)...
-  reporter: 'console'
-
-  // TODO: Threshold config etc.
-}
-
-function arrayise (maybeArray) {
-  if (Array.isArray(maybeArray)) {
-    return maybeArray
-  }
-  return [maybeArray]
-}
+import { arrayise, invokeOnce } from './utils.js'
+import { parse as parseOptions } from './options.js'
 
 const allFiles = []
 function addFile (srcPath, code) {
@@ -27,15 +12,7 @@ function addFile (srcPath, code) {
   })
 }
 
-let registered
-function registerDoneListener (compiler, onDone) {
-  if (registered === compiler) {
-    return
-  }
-
-  compiler.plugin('done', onDone)
-  registered = compiler
-}
+const registerDoneListener = invokeOnce((compiler, onDone) => compiler.plugin('done', onDone))
 
 async function generateAndEmitReport (reporters, files) {
   const reports = escomplex.analyzeProject(files)
@@ -51,9 +28,7 @@ async function generateAndEmitReport (reporters, files) {
 
 export default function (content) {
   const callback = this.async()
-  const packOptions = this.options.complexity || {}
-  const loaderOptions = loaderUtils.parseQuery(this.query)
-  const options = merge({}, defaultOptions, packOptions, loaderOptions)
+  const options = parseOptions(this.options, this.query)
   const reporters = arrayise(options.reporter)
 
   this.cacheable()
