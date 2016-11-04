@@ -18,9 +18,13 @@ function arrayise (maybeArray) {
   return [maybeArray]
 }
 
-const allReports = []
-function addReport (report) {
-  allReports.push(report)
+const allFiles = []
+function addFile (srcPath, code) {
+  allFiles.push({
+    srcPath,
+    // TODO: Work out the absolute filepath
+    code
+  })
 }
 
 let registered
@@ -33,7 +37,9 @@ function registerDoneListener (compiler, onDone) {
   registered = compiler
 }
 
-async function emitReport (reporters, reports) {
+async function generateAndEmitReport (reporters, files) {
+  const reports = escomplex.analyzeProject(files)
+
   return await Promise.all(reporters.map(async reporter => {
     if (typeof reporter === 'function') {
       await reporter(reports)
@@ -53,15 +59,13 @@ export default function (content) {
   this.cacheable()
 
   registerDoneListener(this._compiler, async () => {
-    await emitReport(reporters, allReports)
+    await generateAndEmitReport(reporters, allFiles)
 
-    // Empty our reports aggregator
-    allReports.splice(0, allReports.length)
+    // Empty our files aggregator
+    allFiles.splice(0, allFiles.length)
   })
 
-  const report = escomplex.analyzeModule(content)
-
-  addReport(report)
+  addFile(this.resourcePath, content)
 
   return callback(null, content)
 }

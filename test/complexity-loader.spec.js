@@ -73,10 +73,10 @@ describe('complexity-loader', function () {
           const reportsArg = firstCallArgs[0]
           expect(reportsArg).to.exist
           // There should be one report in the result
-          expect(reportsArg.length).to.equal(1)
+          expect(reportsArg.modules.length).to.equal(1)
 
           // We want the first (and only) report in the set
-          const basicReport = reportsArg[0]
+          const basicReport = reportsArg.modules[0]
           expect(basicReport).to.exist
           expect(basicReport.methods.length).to.equal(2)
           expect(basicReport.methodAggregate.cyclomatic).to.equal(6)
@@ -91,6 +91,22 @@ describe('complexity-loader', function () {
           const stats = await compile(['./basic.js', './complex.js'])
           expect(stats).to.exist
           expect(reporter.callCount).to.equal(1)
+
+          const firstCallArgs = reporter.args[0]
+          expect(firstCallArgs).to.exist
+
+          const reportsArg = firstCallArgs[0]
+          expect(reportsArg).to.exist
+          // There should be two reports in the result
+          expect(reportsArg.modules.length).to.equal(2)
+
+          // We want the second report in the set - the complex report
+          const complexReport = reportsArg.modules[1]
+          expect(complexReport).to.exist
+          expect(complexReport.classes[0].methodAggregate.cyclomatic).to.equal(13)
+          expect(complexReport.classes[0].methodAggregate.sloc.logical).to.equal(29)
+          expect(complexReport.classes[0].methodAggregate.sloc.physical).to.equal(48)
+          expect(complexReport.classes[0].methodAverage.cyclomatic).to.equal(7)
         })
       })
     })
