@@ -2,6 +2,7 @@ import escomplex from 'typhonjs-escomplex'
 
 import { arrayise, invokeOnce } from './utils.js'
 import { parse as parseOptions } from './options.js'
+import processors from './processors/index.js'
 
 const allFiles = []
 function addFile (srcPath, code) {
@@ -14,12 +15,13 @@ function addFile (srcPath, code) {
 
 const registerDoneListener = invokeOnce((compiler, onDone) => compiler.plugin('done', onDone))
 
-async function generateAndEmitReport (reporters, files) {
+async function generateAndEmitReport (reporters, files, options) {
   const reports = escomplex.analyzeProject(files)
+  const processedReport = processors[options.level](reports)
 
   return await Promise.all(reporters.map(async reporter => {
     if (typeof reporter === 'function') {
-      await reporter(reports)
+      await reporter(processedReport)
     }
 
     // TODO: Console reporter, JSON reporter etc.
@@ -34,7 +36,7 @@ export default function (content) {
   this.cacheable()
 
   registerDoneListener(this._compiler, async () => {
-    await generateAndEmitReport(reporters, allFiles)
+    await generateAndEmitReport(reporters, allFiles, options)
 
     // Empty our files aggregator
     allFiles.splice(0, allFiles.length)
