@@ -3,10 +3,9 @@ import merge from 'lodash.merge'
 
 import { arrayContains } from './utils.js'
 
-const VALID_LEVELS = [
-  'raw',
-  'project'
-]
+import * as processors from './processors/index.js'
+
+const VALID_LEVELS = Object.keys(processors).filter(key => key !== 'default')
 
 const defaultOptions = {
   // Can be a single value, or an array of values - currently the 'console' reporter is yet to be

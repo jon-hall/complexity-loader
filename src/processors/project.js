@@ -1,6 +1,6 @@
 export default function (rawReport) {
   return {
-    modules: rawReport.modules.length,
+    files: rawReport.modules.length,
     averages: {
       maintainability: rawReport.moduleAverage.maintainability,
       methods: {

@@ -1,14 +1,16 @@
+import path from 'path'
+
 import escomplex from 'typhonjs-escomplex'
 
 import { arrayise, invokeOnce } from './utils.js'
 import { parse as parseOptions } from './options.js'
-import processors from './processors/index.js'
+import * as processors from './processors/index.js'
 
 const allFiles = []
-function addFile (srcPath, code) {
+function addFile (srcPath, filePath, code) {
   allFiles.push({
     srcPath,
-    // TODO: Work out the absolute filepath
+    filePath,
     code
   })
 }
@@ -42,7 +44,7 @@ export default function (content) {
     allFiles.splice(0, allFiles.length)
   })
 
-  addFile(this.resourcePath, content)
+  addFile(path.relative(process.cwd(), this.resourcePath), this.resourcePath, content)
 
   return callback(null, content)
 }

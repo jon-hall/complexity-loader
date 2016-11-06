@@ -1,7 +1,3 @@
-import project from './project.js'
-import raw from './raw.js'
-
-export default {
-  project,
-  raw
-}
+export file from './file.js'
+export project from './project.js'
+export raw from './raw.js'
