@@ -30,7 +30,7 @@ async function generateAndEmitReport (reporters, files, options) {
   }))
 }
 
-export default function (content) {
+export default async function (content, sourceMap) {
   const callback = this.async()
   const options = parseOptions(this.options, this.query)
   const reporters = arrayise(options.reporter)
@@ -46,5 +46,5 @@ export default function (content) {
 
   addFile(path.relative(process.cwd(), this.resourcePath), this.resourcePath, content)
 
-  return callback(null, content)
+  return callback(null, content, sourceMap)
 }

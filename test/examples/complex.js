@@ -1,7 +1,9 @@
-import assert from 'assert'
+'use strict'
 
-export default class Complex {
-  async complex (a, b, c, d) {
+const Complex2 = require('./complex2.js')
+
+module.exports = class Complex extends Complex2 {
+  complex (a, b, c, d) {
     if (a > b) {
       while (a !== b) {
         a = b - 1
@@ -21,11 +23,10 @@ export default class Complex {
         }
       }
     }
-    assert(a < b)
     console.log(a + b)
   }
 
-  async complex2 (a, b, c, d) {
+  complex2 (a, b, c, d) {
     if (a > b) {
       while (a !== b) {
         a = b - 1

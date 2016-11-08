@@ -19,9 +19,12 @@ const CONFIG_BASIC = {
     filename: 'output.js'
   },
   module: {
-    loaders: [
-      { test: /\.js$/, loader: LOADER_PATH }
+    preLoaders: [
+      { test: /\.js$/, loader: LOADER_PATH, exclude: /node_modules/ }
     ]
+  },
+  resolve: {
+    root: path.resolve(__dirname, '../')
   }
 }
 
@@ -94,14 +97,30 @@ describe('complexity-loader', function () {
 
           const reportsArg = firstCallArgs[0]
           expect(reportsArg).to.exist
-          // There should be two reports in the result
-          expect(reportsArg.modules.length).to.equal(2)
+          // There should be three reports in the result (basic, complex, and complex2)
+          expect(reportsArg.modules.length).to.equal(3)
 
           // We want the second report in the set - the complex report
           const complexReport = reportsArg.modules[1]
           expect(complexReport).to.exist
+
+          // We want the lest report in the set - the complex2 report
+          const complex2Report = reportsArg.modules[2]
+          expect(complex2Report).to.exist
         })
       })
+
+      function checkRaw (report, {
+        cyclomaticTotal,
+        slocLogicalTotal,
+        slocPhysicalTotal,
+        cyclomatic
+      }) {
+        expect(report.methodAggregate.cyclomatic).to.equal(cyclomaticTotal)
+        expect(report.methodAggregate.sloc.logical).to.equal(slocLogicalTotal)
+        expect(report.methodAggregate.sloc.physical).to.equal(slocPhysicalTotal)
+        expect(report.methodAverage.cyclomatic).to.equal(cyclomatic)
+      }
 
       describe('and we use the default ("raw") level for the report', function () {
         describe('and we compile multiple files', function () {
@@ -115,29 +134,25 @@ describe('complexity-loader', function () {
 
             const reportsArg = firstCallArgs[0]
             expect(reportsArg).to.exist
-            // There should be two reports in the result
-            expect(reportsArg.modules.length).to.equal(2)
+            // There should be three reports in the result (basic, complex, and complex2)
+            expect(reportsArg.modules.length).to.equal(3)
 
             // Check the first module in the report ('basic.js')
             const basicReport = reportsArg.modules[0]
             expect(basicReport).to.exist
             expect(basicReport.methods.length).to.equal(2)
 
-            // TODO: Rework these tests so we don't have hard-coded stats for the examples everywhere!!
-            // While getting the values from escomplex would seem sensible, for the tests where the
-            // results are then processed, we'd just be replicating the processing logic in the tests...
-            expect(basicReport.methodAggregate.cyclomatic).to.equal(6)
-            expect(basicReport.methodAggregate.sloc.logical).to.equal(12)
-            expect(basicReport.methodAggregate.sloc.physical).to.equal(22)
-            expect(basicReport.methodAverage.cyclomatic).to.equal(3.5)
+            checkRaw(basicReport, reportExpectations.basic)
 
             // Check the second module in the report ('complex.js')
             const complexReport = reportsArg.modules[1]
             expect(complexReport).to.exist
-            expect(complexReport.classes[0].methodAggregate.cyclomatic).to.equal(13)
-            expect(complexReport.classes[0].methodAggregate.sloc.logical).to.equal(29)
-            expect(complexReport.classes[0].methodAggregate.sloc.physical).to.equal(48)
-            expect(complexReport.classes[0].methodAverage.cyclomatic).to.equal(7)
+            checkRaw(complexReport, reportExpectations.complex)
+
+            // Check the final module in the report ('complex2.js')
+            const complex2Report = reportsArg.modules[2]
+            expect(complex2Report).to.exist
+            checkRaw(complex2Report, reportExpectations.complex2)
           })
         })
       })
@@ -178,7 +193,7 @@ describe('complexity-loader', function () {
             const reportsArg = firstCallArgs[0]
             expect(reportsArg).to.exist
             // 'files' should just be a count of how many files were processed
-            expect(reportsArg.files).to.equal(2)
+            expect(reportsArg.files).to.equal(3)
 
             // We should have file average stats under an 'averages' node
             expect(reportsArg.averages).to.exist
@@ -208,7 +223,7 @@ describe('complexity-loader', function () {
             expect(reportsArg).to.exist
 
             // 'files' should now be an array with a sub-report for each file
-            expect(reportsArg.files.length).to.equal(2)
+            expect(reportsArg.files.length).to.equal(3)
 
             const basicReport = reportsArg.files.find(fileReport => /basic\.js/.test(fileReport.filename))
             expect(basicReport).to.exist
@@ -217,6 +232,10 @@ describe('complexity-loader', function () {
             const complexReport = reportsArg.files.find(fileReport => /complex\.js/.test(fileReport.filename))
             expect(complexReport).to.exist
             checkSummary(complexReport, reportExpectations.complex)
+
+            const complex2Report = reportsArg.files.find(fileReport => /complex2\.js/.test(fileReport.filename))
+            expect(complex2Report).to.exist
+            checkSummary(complex2Report, reportExpectations.complex2)
 
             // We should have file average stats under an 'averages' node
             expect(reportsArg.averages).to.exist
