@@ -19,12 +19,9 @@ const CONFIG_BASIC = {
     filename: 'output.js'
   },
   module: {
-    preLoaders: [
-      { test: /\.js$/, loader: LOADER_PATH, exclude: /node_modules/ }
+    loaders: [
+      { test: /\.js$/, loaders: [LOADER_PATH], exclude: /node_modules/ }
     ]
-  },
-  resolve: {
-    root: path.resolve(__dirname, '../')
   }
 }
 
@@ -234,6 +231,59 @@ describe('complexity-loader', function () {
             checkSummary(complexReport, reportExpectations.complex)
 
             const complex2Report = reportsArg.files.find(fileReport => /complex2\.js/.test(fileReport.filename))
+            expect(complex2Report).to.exist
+            checkSummary(complex2Report, reportExpectations.complex2)
+
+            // We should have file average stats under an 'averages' node
+            expect(reportsArg.averages).to.exist
+
+            // containing maintanability, method complexity, method halstead, and sloc
+            checkSummary(reportsArg.averages, reportExpectations.moduleAverages)
+          })
+        })
+
+        describe('and we use a preprocessor loader (babel-loader)', function () {
+          it('then it should still compile and emit the expected reports', async function () {
+            const stats = await compile(
+              ['./basic.babel.js', './complex.babel.js'],
+              mergeWith({}, CONFIG_BASIC, {
+                module: {
+                  loaders: [{
+                    test: /\.js$/,
+                    loaders: ['babel', LOADER_PATH],
+                    exclude: /node_modules/
+                  }]
+                },
+                babel: {
+                  presets: ['stage-0', 'latest']
+                }
+              })
+            )
+
+            expect(stats).to.exist
+            expect(reporter.callCount).to.equal(1)
+
+            const firstCallArgs = reporter.args[0]
+            expect(firstCallArgs).to.exist
+
+            const reportsArg = firstCallArgs[0]
+            expect(reportsArg).to.exist
+
+            // 'files' should now be an array with a sub-report for each file
+            expect(reportsArg.files.length).to.equal(3)
+
+            // Now confirm the report comes out the same for each file despite babel being involved
+            // (barring the async keyword and using import/export instead of require, the files are
+            // identical in terms of sloc, complexity etc.)
+            const basicReport = reportsArg.files.find(fileReport => /basic\.babel\.js/.test(fileReport.filename))
+            expect(basicReport).to.exist
+            checkSummary(basicReport, reportExpectations.basic)
+
+            const complexReport = reportsArg.files.find(fileReport => /complex\.babel\.js/.test(fileReport.filename))
+            expect(complexReport).to.exist
+            checkSummary(complexReport, reportExpectations.complex)
+
+            const complex2Report = reportsArg.files.find(fileReport => /complex2\.babel\.js/.test(fileReport.filename))
             expect(complex2Report).to.exist
             checkSummary(complex2Report, reportExpectations.complex2)
 

@@ -33,8 +33,10 @@
   "devDependencies": {
     "babel-cli": "^6.18.0",
     "babel-eslint": "^7.1.0",
+    "babel-loader": "^6.2.7",
     "babel-plugin-add-module-exports": "github:jon-hall/babel-plugin-add-module-exports",
     "babel-preset-es2015-node4": "^2.1.0",
+    "babel-preset-latest": "^6.16.0",
     "babel-preset-stage-0": "^6.16.0",
     "babel-register": "^6.18.0",
     "chai": "^3.5.0",
@@ -54,20 +56,5 @@
     "loader-utils": "^0.2.16",
     "lodash.merge": "^4.6.0",
     "typhonjs-escomplex": "0.0.12"
-  },
-  "nyc": {
-    "reporter": [
-      "lcov",
-      "text-summary"
-    ],
-    "exclude": [
-      ".tmp",
-      "test"
-    ],
-    "require": [
-      "babel-register"
-    ],
-    "sourceMap": false,
-    "instrument": false
   }
 }
