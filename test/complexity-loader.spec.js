@@ -6,6 +6,9 @@ import sinon from 'sinon'
 import MemoryFileSystem from 'memory-fs'
 import mergeWith from 'lodash.mergewith'
 import webpack from 'webpack'
+import promisedTemp from 'promised-temp'
+const temp = promisedTemp.track()
+import fs from 'mz/fs'
 
 import * as reportExpectations from './report-expectations.js'
 
@@ -26,7 +29,7 @@ const CONFIG_BASIC = {
 }
 
 async function compile (entry, config = CONFIG_BASIC) {
-  const mergedConfig = mergeWith(config, { entry }, () => {})
+  const mergedConfig = mergeWith({}, config, { entry }, () => {})
   const compiler = webpack(mergedConfig)
 
   compiler.outputFileSystem = OUTPUT_FILE_SYSTEM
@@ -40,6 +43,18 @@ async function compile (entry, config = CONFIG_BASIC) {
       resolve(stats)
     })
   })
+}
+
+function checkRaw (report, {
+  cyclomaticTotal,
+  slocLogicalTotal,
+  slocPhysicalTotal,
+  cyclomatic
+}) {
+  expect(report.methodAggregate.cyclomatic).to.equal(cyclomaticTotal)
+  expect(report.methodAggregate.sloc.logical).to.equal(slocLogicalTotal)
+  expect(report.methodAggregate.sloc.physical).to.equal(slocPhysicalTotal)
+  expect(report.methodAverage.cyclomatic).to.equal(cyclomatic)
 }
 
 describe('complexity-loader', function () {
@@ -74,6 +89,7 @@ describe('complexity-loader', function () {
 
           const reportsArg = firstCallArgs[0]
           expect(reportsArg).to.exist
+
           // There should be one report in the result
           expect(reportsArg.modules.length).to.equal(1)
 
@@ -121,18 +137,6 @@ describe('complexity-loader', function () {
           })
         })
       })
-
-      function checkRaw (report, {
-        cyclomaticTotal,
-        slocLogicalTotal,
-        slocPhysicalTotal,
-        cyclomatic
-      }) {
-        expect(report.methodAggregate.cyclomatic).to.equal(cyclomaticTotal)
-        expect(report.methodAggregate.sloc.logical).to.equal(slocLogicalTotal)
-        expect(report.methodAggregate.sloc.physical).to.equal(slocPhysicalTotal)
-        expect(report.methodAverage.cyclomatic).to.equal(cyclomatic)
-      }
 
       describe('and we use the default ("raw") level for the report', function () {
         beforeEach(function () {
@@ -314,6 +318,47 @@ describe('complexity-loader', function () {
           })
         })
       })
+    })
+
+    // TODO: Invalid reporter option tests
+
+    describe('and we use the "json" reporter', function () {
+      let outputDir
+
+      beforeEach(async function () {
+        outputDir = await temp.mkdir('complexity-loader-test')
+
+        CONFIG_BASIC.complexity = {
+          reporter: 'json',
+          outputDir
+        }
+      })
+
+      describe('and we compile a basic file', function () {
+        it('then it should output the raw report as JSON to the specified folder', async function () {
+          const stats = await compile(['./basic.js'])
+          expect(stats).to.exist
+
+          // There should be a single report in the folder
+          const files = await fs.readdir(outputDir)
+          expect(files.length).to.equal(1)
+
+          const report = require(path.join(outputDir, files[0]))
+          expect(report).to.exist
+
+          // There should be one report in the file (basic)
+          expect(report.modules.length).to.equal(1)
+
+          // Check the first module in the report ('basic.js')
+          const basicReport = report.modules[0]
+          expect(basicReport).to.exist
+          expect(basicReport.methods.length).to.equal(2)
+
+          checkRaw(basicReport, reportExpectations.basic)
+        })
+      })
+
+      // TODO: options tests - defaults, validity, honouring
     })
   })
 })

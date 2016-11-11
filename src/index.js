@@ -5,6 +5,7 @@ import escomplex from 'typhonjs-escomplex'
 import { arrayise, invokeOnce } from './utils.js'
 import { parse as parseOptions } from './options.js'
 import * as processors from './processors/index.js'
+import * as builtinReporters from './reporters/index.js'
 
 const allFiles = []
 function addFile (srcPath, filePath, code) {
@@ -23,10 +24,11 @@ async function generateAndEmitReport (reporters, files, options) {
 
   return await Promise.all(reporters.map(async reporter => {
     if (typeof reporter === 'function') {
-      await reporter(processedReport)
+      // TODO: Test receiving options in 'memory' reporter
+      return await reporter(processedReport, options)
     }
 
-    // TODO: Console reporter, JSON reporter etc.
+    return await builtinReporters[reporter.toLowerCase()](processedReport, options)
   }))
 }
 

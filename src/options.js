@@ -30,4 +30,6 @@ function validateOptions (options) {
   if (!arrayContains(VALID_LEVELS, options.level)) {
     throw new TypeError(`options.level invalid, please specify one of: ${VALID_LEVELS.join(', ')}`)
   }
+
+  // TODO: Validate reporters as either functions or known reporters
 }
