@@ -107,6 +107,21 @@ describe('complexity-loader', function () {
         })
       })
 
+      describe('and we use an invalid level for the report', function () {
+        beforeEach(function () {
+          CONFIG_BASIC.complexity.level = (new Date()).toString()
+        })
+
+        describe('and we compile multiple files', function () {
+          it('then it should call the reporter with a summary for the entire project', async function () {
+            const stats = await compile(['./basic.js', './complex.js'])
+
+            expect(stats.hasErrors()).to.equal(true)
+            expect(stats.compilation.errors[0].toString()).to.have.string('options.level invalid')
+          })
+        })
+      })
+
       function checkRaw (report, {
         cyclomaticTotal,
         slocLogicalTotal,
@@ -120,6 +135,10 @@ describe('complexity-loader', function () {
       }
 
       describe('and we use the default ("raw") level for the report', function () {
+        beforeEach(function () {
+          delete CONFIG_BASIC.complexity.level
+        })
+
         describe('and we compile multiple files', function () {
           it('then it should call the reporter with the raw typhonjs-escomplex reports', async function () {
             const stats = await compile(['./basic.js', './complex.js'])

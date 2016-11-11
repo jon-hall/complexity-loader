@@ -32,19 +32,22 @@ async function generateAndEmitReport (reporters, files, options) {
 
 export default async function (content, sourceMap) {
   const callback = this.async()
-  const options = parseOptions(this.options, this.query)
-  const reporters = arrayise(options.reporter)
+  try {
+    const options = parseOptions(this.options, this.query)
+    const reporters = arrayise(options.reporter)
 
-  this.cacheable()
+    this.cacheable()
 
-  registerDoneListener(this._compiler, async () => {
-    await generateAndEmitReport(reporters, allFiles, options)
+    registerDoneListener(this._compiler, async () => {
+      await generateAndEmitReport(reporters, allFiles, options)
 
-    // Empty our files aggregator
-    allFiles.splice(0, allFiles.length)
-  })
+      // Empty our files aggregator
+      allFiles.splice(0, allFiles.length)
+    })
 
-  addFile(path.relative(process.cwd(), this.resourcePath), this.resourcePath, content)
-
-  return callback(null, content, sourceMap)
+    addFile(path.relative(process.cwd(), this.resourcePath), this.resourcePath, content)
+    return callback(null, content, sourceMap)
+  } catch (ex) {
+    callback(ex)
+  }
 }
