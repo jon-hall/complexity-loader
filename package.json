@@ -54,6 +54,7 @@
     "webpack": "^1.13.3"
   },
   "dependencies": {
+    "fs-extra": "^1.0.0",
     "loader-utils": "^0.2.16",
     "lodash.merge": "^4.6.0",
     "moment": "^2.16.0",

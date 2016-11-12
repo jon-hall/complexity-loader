@@ -1,18 +1,19 @@
 import path from 'path'
 
 import fs from 'mz/fs'
-import moment from 'moment'
+import fsx from 'fs-extra'
+
+import { promisify } from '../utils.js'
 
 export default async function (
   reports, {
     outputDir,
     reportFilename
 }) {
-  reportFilename = reportFilename || `complexity-report-${moment().format('YYYY_MM_DD_HH_mm_ss_SSS')}.json`
+  // Make sure the report filename ends with .json (replace with .json with .json if already
+  // present, else add it on)
+  const outputFile = path.join(outputDir, reportFilename.replace(/(.)(?:\.json)?$/, '$1.json'))
 
-  // TODO: Validate/process options
-  await fs.writeFile(
-    path.join(outputDir, reportFilename),
-    JSON.stringify(reports, null, 4)
-  )
+  await promisify(fsx.ensureDir, fsx)(outputDir + '\\', promisify.done)
+  await fs.writeFile(outputFile, JSON.stringify(reports, null, 4))
 }

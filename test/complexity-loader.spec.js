@@ -58,6 +58,12 @@ function checkRaw (report, {
 }
 
 describe('complexity-loader', function () {
+  let config
+
+  beforeEach(function () {
+    config = mergeWith({}, CONFIG_BASIC)
+  })
+
   describe('when we use the loader with webpack', function () {
     it('then it should still allow a basic file to compile', async function () {
       const stats = await compile(['./basic.js'])
@@ -73,14 +79,16 @@ describe('complexity-loader', function () {
         reporter = sinon.spy()
 
         // TODO: Test an array of reporters when we have multiple
-        CONFIG_BASIC.complexity = {
-          reporter
-        }
+        config = mergeWith({}, CONFIG_BASIC, {
+          complexity: {
+            reporter
+          }
+        })
       })
 
       describe('and we compile a basic file', function () {
         it('then it should call the reporter with the complexity results', async function () {
-          const stats = await compile(['./basic.js'])
+          const stats = await compile(['./basic.js'], config)
           expect(stats).to.exist
           expect(reporter.callCount).to.equal(1)
 
@@ -101,7 +109,7 @@ describe('complexity-loader', function () {
 
       describe('and we compile multiple files', function () {
         it('then it should call the reporter once with the complexity results', async function () {
-          const stats = await compile(['./basic.js', './complex.js'])
+          const stats = await compile(['./basic.js', './complex.js'], config)
           expect(stats).to.exist
           expect(reporter.callCount).to.equal(1)
 
@@ -124,28 +132,34 @@ describe('complexity-loader', function () {
       })
 
       describe('and we use an invalid level for the report', function () {
-        beforeEach(function () {
-          CONFIG_BASIC.complexity.level = (new Date()).toString()
-        })
-
         describe('and we compile multiple files', function () {
-          it('then it should call the reporter with a summary for the entire project', async function () {
-            const stats = await compile(['./basic.js', './complex.js'])
+          it('the compilation result should contain an error about the invalid level', async function () {
+            const badValues = [(new Date()).toString(), {}, null, [], true, NaN, /regex/, 0, Infinity]
 
-            expect(stats.hasErrors()).to.equal(true)
-            expect(stats.compilation.errors[0].toString()).to.have.string('options.level invalid')
+            await Promise.all(
+              badValues.map(async (badValue) => {
+                const stats = await compile(['./basic.js', './complex.js'], mergeWith({}, config, {
+                  complexity: {
+                    level: badValue
+                  }
+                }))
+
+                expect(stats.hasErrors()).to.equal(true)
+                expect(stats.compilation.errors[0].toString()).to.have.string('options.level invalid')
+              })
+            )
           })
         })
       })
 
       describe('and we use the default ("raw") level for the report', function () {
         beforeEach(function () {
-          delete CONFIG_BASIC.complexity.level
+          delete config.complexity.level
         })
 
         describe('and we compile multiple files', function () {
           it('then it should call the reporter with the raw typhonjs-escomplex reports', async function () {
-            const stats = await compile(['./basic.js', './complex.js'])
+            const stats = await compile(['./basic.js', './complex.js'], config)
             expect(stats).to.exist
             expect(reporter.callCount).to.equal(1)
 
@@ -198,12 +212,16 @@ describe('complexity-loader', function () {
 
       describe('and we use the "project" level for the report', function () {
         beforeEach(function () {
-          CONFIG_BASIC.complexity.level = 'project'
+          config = mergeWith({}, config, {
+            complexity: {
+              level: 'project'
+            }
+          })
         })
 
         describe('and we compile multiple files', function () {
           it('then it should call the reporter with a summary for the entire project', async function () {
-            const stats = await compile(['./basic.js', './complex.js'])
+            const stats = await compile(['./basic.js', './complex.js'], config)
             expect(stats).to.exist
             expect(reporter.callCount).to.equal(1)
 
@@ -226,13 +244,17 @@ describe('complexity-loader', function () {
 
       describe('and we use the "file" level for the report', function () {
         beforeEach(function () {
-          CONFIG_BASIC.complexity.level = 'file'
+          config = mergeWith({}, config, {
+            complexity: {
+              level: 'file'
+            }
+          })
         })
 
         describe('and we compile multiple files', function () {
           it('then it should call the reporter with a summary for the entire project, and a ' +
             'summary for each file in the project', async function () {
-            const stats = await compile(['./basic.js', './complex.js'])
+            const stats = await compile(['./basic.js', './complex.js'], config)
             expect(stats).to.exist
             expect(reporter.callCount).to.equal(1)
 
@@ -269,7 +291,7 @@ describe('complexity-loader', function () {
           it('then it should still compile and emit the expected reports', async function () {
             const stats = await compile(
               ['./basic.babel.js', './complex.babel.js'],
-              mergeWith({}, CONFIG_BASIC, {
+              mergeWith({}, config, {
                 module: {
                   loaders: [{
                     test: /\.js$/,
@@ -323,42 +345,162 @@ describe('complexity-loader', function () {
     // TODO: Invalid reporter option tests
 
     describe('and we use the "json" reporter', function () {
-      let outputDir
-
-      beforeEach(async function () {
-        outputDir = await temp.mkdir('complexity-loader-test')
-
-        CONFIG_BASIC.complexity = {
-          reporter: 'json',
-          outputDir
-        }
-      })
-
-      describe('and we compile a basic file', function () {
-        it('then it should output the raw report as JSON to the specified folder', async function () {
-          const stats = await compile(['./basic.js'])
-          expect(stats).to.exist
-
-          // There should be a single report in the folder
-          const files = await fs.readdir(outputDir)
-          expect(files.length).to.equal(1)
-
-          const report = require(path.join(outputDir, files[0]))
-          expect(report).to.exist
-
-          // There should be one report in the file (basic)
-          expect(report.modules.length).to.equal(1)
-
-          // Check the first module in the report ('basic.js')
-          const basicReport = report.modules[0]
-          expect(basicReport).to.exist
-          expect(basicReport.methods.length).to.equal(2)
-
-          checkRaw(basicReport, reportExpectations.basic)
+      beforeEach(function () {
+        config = mergeWith({}, config, {
+          complexity: {
+            reporter: 'json'
+          }
         })
       })
 
-      // TODO: options tests - defaults, validity, honouring
+      describe('and we compile a basic file', function () {
+        describe('and we don\'t specify an output directory', function () {
+          let reportFile
+
+          it('then it should output the raw report to "./complexity"', async function () {
+            const stats = await compile(['./basic.js'], config)
+            const outputDir = path.join(process.cwd(), 'complexity')
+            expect(stats).to.exist
+
+            // There should be a single report in the folder
+            const files = await fs.readdir(outputDir)
+            expect(files.length).to.equal(1)
+
+            reportFile = path.join(outputDir, files[0])
+            const report = require(reportFile)
+            expect(report).to.exist
+
+            // There should be one report in the file (basic)
+            expect(report.modules.length).to.equal(1)
+
+            // Check the first module in the report ('basic.js')
+            const basicReport = report.modules[0]
+            expect(basicReport).to.exist
+            expect(basicReport.methods.length).to.equal(2)
+
+            checkRaw(basicReport, reportExpectations.basic)
+          })
+
+          afterEach(async function () {
+            // Clean up the generated report
+            await fs.unlink(reportFile)
+          })
+        })
+
+        describe('and we specify an output directory', function () {
+          describe('and value specified isn\'t a string', function () {
+            it('the compilation result should contain an error about the invalid outputDir', async function () {
+              const badValues = [{}, null, [], () => {}, true, NaN, /regex/, 0, Infinity]
+
+              await Promise.all(
+                badValues.map(async (badValue) => {
+                  const stats = await compile(
+                    ['./basic.js'],
+                    mergeWith({}, config, {
+                      complexity: {
+                        outputDir: badValue
+                      }
+                    })
+                  )
+
+                  expect(stats.hasErrors()).to.equal(true)
+                  expect(stats.compilation.errors[0].toString()).to.have.string('options.outputDir invalid')
+                })
+              )
+            })
+          })
+
+          describe('and value specified is a string', function () {
+            let outputDir
+
+            beforeEach(async function () {
+              outputDir = await temp.mkdir('complexity-loader-test')
+              config = mergeWith({}, config, {
+                complexity: {
+                  outputDir
+                }
+              })
+            })
+
+            it('then it should output the raw report as JSON to the specified folder', async function () {
+              const stats = await compile(['./basic.js'], config)
+              expect(stats).to.exist
+
+              // There should be a single report in the folder
+              const files = await fs.readdir(outputDir)
+              expect(files.length).to.equal(1)
+
+              const report = require(path.join(outputDir, files[0]))
+              expect(report).to.exist
+
+              // There should be one report in the file (basic)
+              expect(report.modules.length).to.equal(1)
+
+              // Check the first module in the report ('basic.js')
+              const basicReport = report.modules[0]
+              expect(basicReport).to.exist
+              expect(basicReport.methods.length).to.equal(2)
+
+              checkRaw(basicReport, reportExpectations.basic)
+            })
+
+            describe('and we specify an output filename', function () {
+              describe('and value specified isn\'t a string', function () {
+                it('the compilation result should contain an error about the invalid reportFilename', async function () {
+                  const badValues = [{}, null, [], () => {}, true, NaN, /regex/, 0, Infinity]
+
+                  await Promise.all(
+                    badValues.map(async (badValue) => {
+                      const stats = await compile(
+                        ['./basic.js'],
+                        mergeWith({}, config, {
+                          complexity: {
+                            reportFilename: {}
+                          }
+                        })
+                      )
+
+                      expect(stats.hasErrors()).to.equal(true)
+                      expect(stats.compilation.errors[0].toString()).to.have.string('options.reportFilename invalid')
+                    })
+                  )
+                })
+              })
+
+              describe('and value specified is a string', function () {
+                let reportFilename
+
+                beforeEach(async function () {
+                  reportFilename = 'my-complexity-report'
+                  config = mergeWith({}, config, {
+                    complexity: {
+                      reportFilename
+                    }
+                  })
+                })
+
+                it('then it should output the raw report as JSON using the specified filename', async function () {
+                  const stats = await compile(['./basic.js'], config)
+                  expect(stats).to.exist
+
+                  const report = require(path.join(outputDir, reportFilename))
+                  expect(report).to.exist
+
+                  // There should be one report in the file (basic)
+                  expect(report.modules.length).to.equal(1)
+
+                  // Check the first module in the report ('basic.js')
+                  const basicReport = report.modules[0]
+                  expect(basicReport).to.exist
+                  expect(basicReport.methods.length).to.equal(2)
+
+                  checkRaw(basicReport, reportExpectations.basic)
+                })
+              })
+            })
+          })
+        })
+      })
     })
   })
 })
