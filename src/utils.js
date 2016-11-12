@@ -28,3 +28,30 @@ export function invokeOnce (invoke) {
     return result
   }
 }
+
+// TODO: Pull this out into a package..?
+function getResolver (resolve, reject) {
+  return function (err, result) {
+    if (err) {
+      return reject(err)
+    }
+
+    return resolve(result)
+  }
+}
+
+export function promisify (func, thisArg) {
+  return function (...args) {
+    return new Promise((resolve, reject) => {
+      // Call func with all args passed in, replacing the arg where promisify is passed in with
+      // the 'node-style' resolver callback
+      func.call(
+        thisArg || this,
+        ...(args.map(arg => arg !== promisify ? arg : getResolver(resolve, reject)))
+      )
+    })
+  }
+}
+
+// Alias for readability
+promisify.done = promisify
