@@ -1,6 +1,7 @@
 export default function (rawReport) {
   return {
     files: rawReport.modules.length,
+    // TODO: Should we gather file-averages and/or project totals as well...?
     averages: {
       maintainability: rawReport.moduleAverage.maintainability,
       methods: {

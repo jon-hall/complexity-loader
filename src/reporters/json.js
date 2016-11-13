@@ -6,7 +6,7 @@ import fsx from 'fs-extra'
 import { promisify } from '../utils.js'
 
 export default async function (
-  reports, {
+  report, {
     outputDir,
     reportFilename
 }) {
@@ -15,5 +15,5 @@ export default async function (
   const outputFile = path.join(outputDir, reportFilename.replace(/(.)(?:\.json)?$/, '$1.json'))
 
   await promisify(fsx.ensureDir, fsx)(outputDir + '\\', promisify.done)
-  await fs.writeFile(outputFile, JSON.stringify(reports, null, 4))
+  await fs.writeFile(outputFile, JSON.stringify(report, null, 4))
 }

@@ -9,6 +9,7 @@ import webpack from 'webpack'
 import promisedTemp from 'promised-temp'
 const temp = promisedTemp.track()
 import fs from 'mz/fs'
+import stripcolorcodes from 'stripcolorcodes'
 
 import * as reportExpectations from './report-expectations.js'
 
@@ -498,6 +499,110 @@ describe('complexity-loader', function () {
                 })
               })
             })
+          })
+        })
+      })
+    })
+
+    describe('and we use the "console" reporter', function () {
+      let stdoutText
+      let unhook
+
+      function hookStdOut (collector, suppress) {
+        const stdoutWrite = process.stdout.write
+
+        // Replace write with an intercept function
+        process.stdout.write = (buffer, encoding, fileDescriptor) => {
+          // This pushes the strings being written to our collector array (split on newlines)
+          collector.push(...buffer.toString(encoding).split(/\r?\n/))
+
+          // And then calls the original write method (if not suppressed)
+          return suppress ? null : stdoutWrite.call(process.stdout, buffer, encoding, fileDescriptor)
+        }
+
+        // Return a 'restore' function
+        return () => { process.stdout.write = stdoutWrite }
+      }
+
+      function getTableData (tableBody) {
+        const tableRows = tableBody.split('┤')
+          .map(rawRow => {
+            const dataRow = rawRow.split('\n')[1]
+            const cells = dataRow.split('│')
+              // Remove the (empty) first and last cells
+              .filter((row, i, arr) => !!i && i < arr.length - 1)
+              // Remove the colour codes and extra whitespace added to each cell by cli-table
+              .map(cellValue => stripcolorcodes(cellValue).trim())
+
+            return cells
+          })
+
+        // Convert rows into a series of objects with the column headers as keys
+        const headerRow = tableRows[0]
+        return tableRows
+          // Remove the header row itself
+          .filter((row, i) => !!i)
+          .map(row =>
+            row.reduce((rowObj, cell, i) => {
+              rowObj[headerRow[i]] = cell
+              return rowObj
+            }, {})
+          )
+      }
+
+      function getTable (lines, title) {
+        // TODO: Find the table and extract its data
+        const joinedLines = lines.join('\n')
+        const titleIndex = joinedLines.indexOf(title)
+        const afterTitle = titleIndex < 0 ? '' : joinedLines.slice(titleIndex + title.length)
+
+        const tableBody = afterTitle.match(/┌(?:\s|[^┘])*/)
+
+        return getTableData(tableBody ? tableBody[0] : '')
+      }
+
+      beforeEach(function () {
+        config = mergeWith({}, config, {
+          complexity: {
+            reporter: 'console'
+          }
+        })
+
+        stdoutText = []
+      })
+
+      afterEach(function () {
+        // Make sure we unhook, even if a test crashes
+        unhook()
+      })
+
+      describe('and we compile a basic file', function () {
+        // TODO: File level report and raw/method-level report (also new 'method' level for memory reporter...)
+
+        describe('and we use the default "project" report level', function () {
+          beforeEach(function () {
+            config = mergeWith({}, config, {
+              complexity: {
+                level: 'project'
+              }
+            })
+          })
+
+          it('then it should emit a a single table with with one row of project average stats', async function () {
+            unhook = hookStdOut(stdoutText, true)
+
+            const stats = await compile(
+              ['./basic.babel.js'],
+              mergeWith({}, config)
+            )
+            unhook()
+
+            expect(stats).to.exist
+
+            const basicTable = getTable(stdoutText, 'Complexity report')
+            expect(basicTable).to.exist
+
+            // TODO: Add some real assertions about the results here...
           })
         })
       })

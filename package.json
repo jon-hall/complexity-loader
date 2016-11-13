@@ -51,9 +51,11 @@
     "nodemon": "^1.11.0",
     "promised-temp": "^0.1.0",
     "sinon": "^1.17.6",
+    "stripcolorcodes": "^0.1.0",
     "webpack": "^1.13.3"
   },
   "dependencies": {
+    "cli-table2": "^0.2.0",
     "fs-extra": "^1.0.0",
     "loader-utils": "^0.2.16",
     "lodash.merge": "^4.6.0",
