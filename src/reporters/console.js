@@ -7,7 +7,7 @@ export default async function (
   const table = new Table({
     // TODO: For each report type, these headings should be brought in from a location we can share
     // with tests, for maintainability
-    head: ['File', 'Av SLOC', 'Av Real SLOC', 'Av Cyclomtc', 'Av Bugs', 'Maintblty']
+    head: ['File', 'Av SLOC', 'Av Phys SLOC', 'Av Cyclomtc', 'Av Bugs', 'Maintblty']
   })
 
   // TODO: Proper per-level table creation, this is just a mock for getting testing in place...
@@ -15,11 +15,11 @@ export default async function (
   try {
     table.push([
       'Project',
-      report.averages.methods.sloc.physical,
-      report.averages.methods.sloc.logical,
-      report.averages.methods.cyclomatic,
-      report.averages.methods.halstead.bugs,
-      report.averages.maintainability
+      report.averages.sloc.physical,
+      report.averages.sloc.logical,
+      report.averages.cyclomatic,
+      report.averages.halstead.bugs,
+      report.maintainability
     ])
 
     console.log('Complexity report')

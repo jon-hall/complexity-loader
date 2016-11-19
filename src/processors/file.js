@@ -1,23 +1,35 @@
-import project from './project.js'
+import ObjectReport from './object-report.js'
+import AggregateReport from './aggregate-report.js'
+import { ProjectReport } from './project.js'
+
+class FileReport extends ObjectReport {
+  constructor ({
+    srcPath,
+    maintainability,
+    methodAverage: {
+      cyclomatic,
+      halstead,
+      sloc
+    }
+  }) {
+    super({
+      name: srcPath,
+      type: 'file',
+      maintainability,
+      averages: new AggregateReport({
+        cyclomatic,
+        halsteadBugs: halstead.bugs,
+        halsteadDifficulty: halstead.difficulty,
+        slocPhysical: sloc.physical,
+        slocLogical: sloc.logical
+      })
+    })
+  }
+}
 
 export default function (rawReport) {
-  const projectReport = project(rawReport)
+  // The objects within the top-level project report are the file reports
+  rawReport.objects = rawReport.modules.map(moduleReport => new FileReport(moduleReport))
 
-  projectReport.files = rawReport.modules.map(moduleReport => ({
-    filename: moduleReport.srcPath,
-    maintainability: moduleReport.maintainability,
-    methods: {
-      cyclomatic: moduleReport.methodAverage.cyclomatic,
-      halstead: {
-        bugs: moduleReport.methodAverage.halstead.bugs,
-        difficulty: moduleReport.methodAverage.halstead.difficulty
-      },
-      sloc: {
-        physical: moduleReport.methodAverage.sloc.physical,
-        logical: moduleReport.methodAverage.sloc.logical
-      }
-    }
-  }))
-
-  return projectReport
+  return new ProjectReport(rawReport)
 }

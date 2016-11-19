@@ -201,14 +201,14 @@ describe('complexity-loader', function () {
         slocLogical
       }) {
         expect(summary.maintainability).to.equal(maintanability)
-        expect(summary.methods).to.exist
-        expect(summary.methods.cyclomatic).to.equal(cyclomatic)
-        expect(summary.methods.halstead).to.exist
-        expect(summary.methods.halstead.bugs).to.equal(halsteadBugs)
-        expect(summary.methods.halstead.difficulty).to.equal(halsteadDifficulty)
-        expect(summary.methods.sloc).to.exist
-        expect(summary.methods.sloc.physical).to.equal(slocPhysical)
-        expect(summary.methods.sloc.logical).to.equal(slocLogical)
+        expect(summary.averages).to.exist
+        expect(summary.averages.cyclomatic).to.equal(cyclomatic)
+        expect(summary.averages.halstead).to.exist
+        expect(summary.averages.halstead.bugs).to.equal(halsteadBugs)
+        expect(summary.averages.halstead.difficulty).to.equal(halsteadDifficulty)
+        expect(summary.averages.sloc).to.exist
+        expect(summary.averages.sloc.physical).to.equal(slocPhysical)
+        expect(summary.averages.sloc.logical).to.equal(slocLogical)
       }
 
       describe('and we use the "project" level for the report', function () {
@@ -231,14 +231,12 @@ describe('complexity-loader', function () {
 
             const reportsArg = firstCallArgs[0]
             expect(reportsArg).to.exist
-            // 'files' should just be a count of how many files were processed
-            expect(reportsArg.files).to.equal(3)
 
             // We should have file average stats under an 'averages' node
             expect(reportsArg.averages).to.exist
 
             // containing maintanability, method complexity, method halstead, and sloc
-            checkSummary(reportsArg.averages, reportExpectations.moduleAverages)
+            checkSummary(reportsArg, reportExpectations.moduleAverages)
           })
         })
       })
@@ -266,17 +264,17 @@ describe('complexity-loader', function () {
             expect(reportsArg).to.exist
 
             // 'files' should now be an array with a sub-report for each file
-            expect(reportsArg.files.length).to.equal(3)
+            expect(reportsArg.objects.length).to.equal(3)
 
-            const basicReport = reportsArg.files.find(fileReport => /basic\.js/.test(fileReport.filename))
+            const basicReport = reportsArg.objects.find(fileReport => /basic\.js/.test(fileReport.name))
             expect(basicReport).to.exist
             checkSummary(basicReport, reportExpectations.basic)
 
-            const complexReport = reportsArg.files.find(fileReport => /complex\.js/.test(fileReport.filename))
+            const complexReport = reportsArg.objects.find(fileReport => /complex\.js/.test(fileReport.name))
             expect(complexReport).to.exist
             checkSummary(complexReport, reportExpectations.complex)
 
-            const complex2Report = reportsArg.files.find(fileReport => /complex2\.js/.test(fileReport.filename))
+            const complex2Report = reportsArg.objects.find(fileReport => /complex2\.js/.test(fileReport.name))
             expect(complex2Report).to.exist
             checkSummary(complex2Report, reportExpectations.complex2)
 
@@ -284,7 +282,7 @@ describe('complexity-loader', function () {
             expect(reportsArg.averages).to.exist
 
             // containing maintanability, method complexity, method halstead, and sloc
-            checkSummary(reportsArg.averages, reportExpectations.moduleAverages)
+            checkSummary(reportsArg, reportExpectations.moduleAverages)
           })
         })
 
@@ -316,20 +314,20 @@ describe('complexity-loader', function () {
             expect(reportsArg).to.exist
 
             // 'files' should now be an array with a sub-report for each file
-            expect(reportsArg.files.length).to.equal(3)
+            expect(reportsArg.objects.length).to.equal(3)
 
             // Now confirm the report comes out the same for each file despite babel being involved
             // (barring the async keyword and using import/export instead of require, the files are
             // identical in terms of sloc, complexity etc.)
-            const basicReport = reportsArg.files.find(fileReport => /basic\.babel\.js/.test(fileReport.filename))
+            const basicReport = reportsArg.objects.find(fileReport => /basic\.babel\.js/.test(fileReport.name))
             expect(basicReport).to.exist
             checkSummary(basicReport, reportExpectations.basic)
 
-            const complexReport = reportsArg.files.find(fileReport => /complex\.babel\.js/.test(fileReport.filename))
+            const complexReport = reportsArg.objects.find(fileReport => /complex\.babel\.js/.test(fileReport.name))
             expect(complexReport).to.exist
             checkSummary(complexReport, reportExpectations.complex)
 
-            const complex2Report = reportsArg.files.find(fileReport => /complex2\.babel\.js/.test(fileReport.filename))
+            const complex2Report = reportsArg.objects.find(fileReport => /complex2\.babel\.js/.test(fileReport.name))
             expect(complex2Report).to.exist
             checkSummary(complex2Report, reportExpectations.complex2)
 
@@ -337,7 +335,7 @@ describe('complexity-loader', function () {
             expect(reportsArg.averages).to.exist
 
             // containing maintanability, method complexity, method halstead, and sloc
-            checkSummary(reportsArg.averages, reportExpectations.moduleAverages)
+            checkSummary(reportsArg, reportExpectations.moduleAverages)
           })
         })
       })

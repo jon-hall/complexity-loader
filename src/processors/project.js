@@ -1,20 +1,35 @@
-export default function (rawReport) {
-  return {
-    files: rawReport.modules.length,
-    // TODO: Should we gather file-averages and/or project totals as well...?
-    averages: {
-      maintainability: rawReport.moduleAverage.maintainability,
-      methods: {
-        cyclomatic: rawReport.moduleAverage.methodAverage.cyclomatic,
-        halstead: {
-          bugs: rawReport.moduleAverage.methodAverage.halstead.bugs,
-          difficulty: rawReport.moduleAverage.methodAverage.halstead.difficulty
-        },
-        sloc: {
-          physical: rawReport.moduleAverage.methodAverage.sloc.physical,
-          logical: rawReport.moduleAverage.methodAverage.sloc.logical
-        }
+import ObjectReport from './object-report.js'
+import AggregateReport from './aggregate-report.js'
+
+export class ProjectReport extends ObjectReport {
+  constructor ({
+    modules,
+    moduleAverage: {
+      maintainability,
+      methodAverage: {
+        cyclomatic,
+        halstead,
+        sloc
       }
-    }
+    },
+    objects
+  }) {
+    super({
+      name: 'Project',
+      type: 'project',
+      maintainability,
+      averages: new AggregateReport({
+        cyclomatic,
+        halsteadBugs: halstead.bugs,
+        halsteadDifficulty: halstead.difficulty,
+        slocPhysical: sloc.physical,
+        slocLogical: sloc.logical
+      }),
+      objects
+    })
   }
+}
+
+export default function (rawReport) {
+  return new ProjectReport(rawReport)
 }
