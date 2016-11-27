@@ -19,6 +19,24 @@ export const basic = {
   slocLogicalTotal: 12
 }
 
+export const basicMethodsBasic = {
+  maintanability: null,
+  cyclomatic: 3,
+  halsteadBugs: 0.024,
+  halsteadDifficulty: 12,
+  slocPhysical: 8,
+  slocLogical: 4
+}
+
+export const basicMethodsBasic2 = {
+  maintanability: null,
+  cyclomatic: 4,
+  halsteadBugs: 0.038,
+  halsteadDifficulty: 17,
+  slocPhysical: 12,
+  slocLogical: 6
+}
+
 export const complex = {
   maintanability: 97.528,
   cyclomatic: 7,

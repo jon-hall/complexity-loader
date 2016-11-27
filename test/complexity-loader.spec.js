@@ -339,6 +339,61 @@ describe('complexity-loader', function () {
           })
         })
       })
+
+      describe('and we use the "method" level for the report', function () {
+        beforeEach(function () {
+          config = mergeWith({}, config, {
+            complexity: {
+              level: 'method'
+            }
+          })
+        })
+
+        describe('and we compile multiple files', function () {
+          it('then it should call the reporter with a summary for the entire project, a summary ' +
+            'for each file, and a summary for each method', async function () {
+            const stats = await compile(['./basic.js', './complex.js'], config)
+            expect(stats).to.exist
+            expect(reporter.callCount).to.equal(1)
+
+            const firstCallArgs = reporter.args[0]
+            expect(firstCallArgs).to.exist
+
+            const reportsArg = firstCallArgs[0]
+            expect(reportsArg).to.exist
+
+            // 'files' should now be an array with a sub-report for each file
+            expect(reportsArg.objects.length).to.equal(3)
+
+            const basicReport = reportsArg.objects.find(fileReport => /basic\.js/.test(fileReport.name))
+            expect(basicReport).to.exist
+            checkSummary(basicReport, reportExpectations.basic)
+
+            const complexReport = reportsArg.objects.find(fileReport => /complex\.js/.test(fileReport.name))
+            expect(complexReport).to.exist
+            checkSummary(complexReport, reportExpectations.complex)
+
+            const complex2Report = reportsArg.objects.find(fileReport => /complex2\.js/.test(fileReport.name))
+            expect(complex2Report).to.exist
+            checkSummary(complex2Report, reportExpectations.complex2)
+
+            // Check method-level expectations
+            const basicMethodReport = basicReport.objects.find(methodReport => /^basic$/.test(methodReport.name))
+            expect(basicMethodReport).to.exist
+            checkSummary(basicMethodReport, reportExpectations.basicMethodsBasic)
+
+            const basic2MethodReport = basicReport.objects.find(methodReport => /^basic2$/.test(methodReport.name))
+            expect(basic2MethodReport).to.exist
+            checkSummary(basic2MethodReport, reportExpectations.basicMethodsBasic2)
+
+            // We should have file average stats under an 'averages' node
+            expect(reportsArg.averages).to.exist
+
+            // containing maintanability, method complexity, method halstead, and sloc
+            checkSummary(reportsArg, reportExpectations.moduleAverages)
+          })
+        })
+      })
     })
 
     // TODO: Invalid reporter option tests
